@@ -1,0 +1,10 @@
+---
+title: "final project"
+author: "c"
+format: html
+---
+
+```{r}
+substrate <- read.csv("Substrate.csv")
+```
+
