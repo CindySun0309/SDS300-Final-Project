@@ -5,6 +5,78 @@ format: html
 ---
 
 ```{r}
-substrate <- read.csv("Substrate.csv")
+library(readr)
+library(dplyr)
+library(tidyr)
+library(fuzzyjoin)
+library(lubridate)
 ```
+
+
+```{r}
+substrate <- read.csv("Substrate.csv")
+temperature <- read_csv("temperature.csv")
+temperature <- temperature[-1, ]
+```
+
+
+
+```{r}
+substrate_filter <- substrate %>%
+  filter(substrate_code %in% c("HC", "HC/B", "HC/D"))
+```
+
+
+```{r}
+substrate_filter <- substrate_filter %>%
+  separate(col = coordinates_in_decimal_degree_format,
+           into = c("latitude", "longitude"),
+           sep = ",\\s*",
+           convert = TRUE)
+
+```
+
+```{r}
+substrate_filter <- substrate_filter %>%
+  mutate(latitude_in_decimal = round(latitude, 1),
+         longitude_in_decimal = round(longitude, 1)) 
+```
+
+```{r}
+# Convert the time to Date objects for the temperature dataset
+temperature$date <- as.Date(as.POSIXct(temperature$time, format="%Y-%m-%dT%H:%M:%SZ", tz="UTC"))
+# If the 'date' column is in a format like "19-March-03", specify the format accordingly
+substrate_filter$date <- as.Date(substrate_filter$date, format="%d-%B-%y")
+```
+
+
+```{r}
+# Convert the latitude and longitude in the temperature data frame to numeric if they are characters
+temperature$latitude <- as.numeric(temperature$latitude)
+temperature$longitude <- as.numeric(temperature$longitude)
+
+# Similarly, ensure that the substrate_filter data frame has latitude and longitude as numeric
+substrate_filter$latitude <- as.numeric(substrate_filter$latitude)
+substrate_filter$longitude <- as.numeric(substrate_filter$longitude)
+```
+
+```{r}
+# Find the range of dates and lat/long in substrate_filter to limit the size of temperature
+date_range <- range(substrate_filter$date, na.rm = TRUE)
+lat_range <- range(substrate_filter$latitude, na.rm = TRUE) + c(-0.5, 0.5)
+long_range <- range(substrate_filter$longitude, na.rm = TRUE) + c(-0.5, 0.5)
+
+# Pre-filter temperature data
+temperature_filtered <- temperature %>%
+  filter(date >= date_range[1] & date <= date_range[2],
+         latitude >= lat_range[1] & latitude <= lat_range[2],
+         longitude >= long_range[1] & longitude <= long_range[2])
+
+```
+
+
+
+
+
+
 
