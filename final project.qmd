@@ -12,34 +12,26 @@ library(fuzzyjoin)
 library(lubridate)
 ```
 
-
 ```{r}
+# load data
 substrate <- read.csv("Substrate.csv")
 temperature <- read_csv("temperature.csv")
 temperature <- temperature[-1, ]
 ```
 
-
-
 ```{r}
+# filter the substrate data
 substrate_filter <- substrate %>%
-  filter(substrate_code %in% c("HC", "HC/B", "HC/D"))
-```
-
-
-```{r}
-substrate_filter <- substrate_filter %>%
+  # choose only substrate codes we are interested (hard coral, hard coral/bleached, hard coral/dead)
+  filter(substrate_code %in% c("HC", "HC/B", "HC/D")) |>
+  # create longitude and latitude columns
   separate(col = coordinates_in_decimal_degree_format,
            into = c("latitude", "longitude"),
            sep = ",\\s*",
-           convert = TRUE)
-
-```
-
-```{r}
-substrate_filter <- substrate_filter %>%
-  mutate(latitude_in_decimal = round(latitude, 1),
-         longitude_in_decimal = round(longitude, 1)) 
+           convert = TRUE) |>
+  # round longitude and latitude
+  mutate(latitude = round(latitude, 1),
+         longitude = round(longitude, 1)) 
 ```
 
 ```{r}
@@ -49,9 +41,8 @@ temperature$date <- as.Date(as.POSIXct(temperature$time, format="%Y-%m-%dT%H:%M:
 substrate_filter$date <- as.Date(substrate_filter$date, format="%d-%B-%y")
 ```
 
-
 ```{r}
-# Convert the latitude and longitude in the temperature data frame to numeric if they are characters
+# Convert the latitude and longitude in the temperature data frame to numeric because they are characters
 temperature$latitude <- as.numeric(temperature$latitude)
 temperature$longitude <- as.numeric(temperature$longitude)
 
@@ -67,16 +58,37 @@ lat_range <- range(substrate_filter$latitude, na.rm = TRUE) + c(-0.5, 0.5)
 long_range <- range(substrate_filter$longitude, na.rm = TRUE) + c(-0.5, 0.5)
 
 # Pre-filter temperature data
-temperature_filtered <- temperature %>%
+temperature_filter <- temperature %>%
   filter(date >= date_range[1] & date <= date_range[2],
          latitude >= lat_range[1] & latitude <= lat_range[2],
          longitude >= long_range[1] & longitude <= long_range[2])
-
 ```
 
+```{r}
+# temperature data: Extract year and month to create new columns
+temperature_filter$year <- year(ymd(temperature_filter$date))
+temperature_filter$month <- month(ymd(temperature_filter$date))
 
+# substrate data: Extract month to create a new column (year already exist)
+substrate_filter$month <- month(ymd(substrate_filter$date))
+```
 
+```{r}
+# inner_join two datasets by c("year", "month", "longitude", "latitude"), ignore the difference in "day" because otherwise the dataset would be really small.
+joined_data <- inner_join(substrate_filter, temperature_filter, by = c("year", "month", "longitude", "latitude"))
 
+# clean the joined data to create the final data named data_cleaned
+data_cleaned <- joined_data |>
+  # select the variables needed (sst is Sea Surface Temperature (SST))
+  select(reef_name, country, state_province_island, city_town, region, latitude, longitude, year, month, date.x, date.y, depth..m., substrate_code, total, errors, sst) |>
+  filter(errors == "false") |>
+  rename(date_substrate = date.x,
+         date_temperature = date.y)
+```
+
+```{r}
+write_csv(data_cleaned, file = "data_cleaned.csv")
+```
 
 
 
