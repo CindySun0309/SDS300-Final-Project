@@ -1,0 +1,22 @@
+---
+title: "Final Project"
+author: "Cindy Sun, Evelyn Gao, Sophia Dai"
+format: html
+---
+```{r setup, include=FALSE}
+# Set default behavior for all code chunks, do not edit this chunk
+knitr::opts_chunk$set(
+  echo = TRUE, 
+  message = FALSE, 
+  warning = FALSE
+)
+```
+
+```{r, echo=FALSE}
+# load all packages here
+library(tidyverse)
+
+# read data here 
+data <- read.csv("data_cleaned.csv")
+```
+
