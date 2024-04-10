@@ -1,0 +1,117 @@
+---
+title: "data_cleaning_new"
+author: "Cindy"
+format: html
+---
+
+```{r}
+library(readr)
+library(dplyr)
+library(tidyr)
+library(fuzzyjoin)
+library(lubridate)
+```
+
+```{r}
+# load data
+substrate <- read.csv("Substrate.csv")
+
+# erddap_small <- read_csv("ERDDAP_coral_bleaching_small.csv")
+# erddap <- erddap_small[-1, ]
+
+# erddap_large <- read_csv("ERDDAP_coral_bleaching_large.csv")
+# erddap <- erddap_large[-1, ]
+```
+
+# substrate data cleaning
+```{r}
+# filter the substrate data
+substrate_filter <- substrate %>%
+  # choose only substrate codes we are interested (hard coral, hard coral/bleached, hard coral/dead)
+  filter(substrate_code == "HC",
+         region == "Atlantic") |>
+  # create longitude and latitude columns
+  separate(col = coordinates_in_decimal_degree_format,
+           into = c("latitude", "longitude"),
+           sep = ",\\s*",
+           convert = TRUE) |>
+  # round longitude and latitude
+  mutate(latitude = round(latitude, 1),
+         longitude = round(longitude, 1)) 
+```
+
+```{r}
+# Convert the time to Date objects for the substrate dataset
+# If the 'date' column is in a format like "19-March-03", specify the format accordingly
+substrate_filter$date <- as.Date(substrate_filter$date, format="%d-%B-%y")
+```
+
+```{r}
+# substrate data: Extract month to create a new column (year already exist)
+substrate_filter$month <- month(ymd(substrate_filter$date))
+```
+
+```{r}
+# substrate data: change total column into numeric
+substrate_filter$total <- as.numeric(substrate_filter$total)
+```
+
+
+# erddap data cleaning
+```{r}
+# round latitude and longitude into one decimal place
+erddap_filter <- erddap |>
+  mutate(latitude = round(as.numeric(latitude), 1),
+         longitude = round(as.numeric(longitude), 1)) 
+```
+
+```{r}
+# Convert the time to Date objects for the erddap dataset
+erddap_filter$date <- as.Date(as.POSIXct(erddap_filter$time, format="%Y-%m-%dT%H:%M:%SZ", tz="UTC"))
+```
+
+```{r}
+# erddap data: Extract year and month to create new columns
+erddap_filter$year <- year(ymd(erddap_filter$date))
+erddap_filter$month <- month(ymd(erddap_filter$date))
+```
+
+
+# Join two data
+```{r}
+# inner_join two datasets by c("year", "month", "longitude", "latitude"), ignore the difference in "day" because otherwise the dataset would be really small.
+joined_data <- inner_join(substrate_filter, erddap_filter, by = c("year", "month", "longitude", "latitude"))
+
+# clean the joined data to create the final data named data_cleaned
+data_cleaned <- joined_data |>
+  # select the variables needed
+  filter(errors == "false") |>
+  select(reef_name, country, state_province_island, city_town, latitude, longitude, year, month, date.x, date.y, depth..m., substrate_code, total, CRW_BAA, CRW_DHW, CRW_SST, CRW_SSTANOMALY) |>
+  rename(date_substrate = date.x,
+         date_erddap = date.y)
+```
+
+```{r}
+write_csv(data_cleaned, file = "data_cleaned_new.csv")
+```
+
+# check
+```{r}
+substrate_filter |>
+  group_by(latitude, longitude) |>
+  summarise(n = n())
+```
+
+```{r}
+erddap_filter |>
+  group_by(latitude, longitude) |>
+  summarise(n = n())
+```
+
+```{r}
+data_cleaned |>
+  group_by(latitude, longitude) |>
+  summarise(n = n())
+```
+
+
