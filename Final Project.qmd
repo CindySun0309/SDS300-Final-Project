@@ -15,8 +15,61 @@ knitr::opts_chunk$set(
 ```{r, echo=FALSE}
 # load all packages here
 library(tidyverse)
+library(ggplot2)
+library(ggridges)
 
 # read data here 
 data <- read.csv("data_cleaned.csv")
+```
+
+```{r}
+# Exploratory data analysis
+# group variables into categorical and numerical
+variables_categorical = c("reef_name", "country", "state_province_island", "city_town", "region", "year","month", "date_substrate", "date_temperature",  "substrate_code")
+variables_numerical = c("latitude", "longitude","depth..m.", "total","sst")
+```
+
+```{r}
+# EDA summary tables for category variables
+eda_categorical <- list()
+
+for (variable in variables_categorical) {
+  summary_table <- data |>
+    group_by(data[variable])|>
+    summarize(n = n(),
+              sst_mean = mean(sst),
+              sst_sd = sd(sst))
+  eda_categorical <- append(empty_categorical, list(summary_table))
+}
+
+eda_categorical
+```
+
+```{r}
+#histogram for region vs. sst
+histogram_region <- data |>
+  ggplot(aes(x = sst, y = region, fill = region)) +
+  geom_density_ridges(scale = 3, rel_min_height = 0.01) +
+  labs(title = "Histograms of Sea Surface Temperature by Region",
+       x = "Sea Surface Temperature",
+       y = "Region") +
+  theme_minimal()
+
+histogram_region
+```
+
+```{r}
+#histogram for substrate_code vs. sst 
+histogram_region <- data |>
+  ggplot(aes(x = sst, y = substrate_code, fill = substrate_code)) +
+  geom_density_ridges(scale = 3, rel_min_height = 0.01) +
+  labs(title = "Histograms of Sea Surface Temperature by Region",
+       x = "Sea Surface Temperature",
+       y = "Region") +
+  theme_minimal()
+
+histogram_region
+
+ggplot(data = data, aes(x = substrate_code, y = total)) + geom_col()
 ```
 
