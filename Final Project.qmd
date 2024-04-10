@@ -30,8 +30,8 @@ variables_numerical = c("latitude", "longitude","depth..m.", "total","sst")
 ```
 
 ```{r}
-# summary tables for category variables
-empty_categorical <- list()
+# EDA summary tables for category variables
+eda_categorical <- list()
 
 for (variable in variables_categorical) {
   summary_table <- data |>
@@ -39,10 +39,10 @@ for (variable in variables_categorical) {
     summarize(n = n(),
               sst_mean = mean(sst),
               sst_sd = sd(sst))
-  empty_categorical <- append(empty_categorical, list(summary_table))
+  eda_categorical <- append(empty_categorical, list(summary_table))
 }
 
-empty_categorical
+eda_categorical
 ```
 
 ```{r}
@@ -72,5 +72,4 @@ histogram_region
 
 ggplot(data = data, aes(x = substrate_code, y = total)) + geom_col()
 ```
-
 
