@@ -5,10 +5,9 @@ format: html
 ---
 
 ```{r}
-library(readr)
 library(dplyr)
 library(tidyr)
-library(fuzzyjoin)
+# library(fuzzyjoin)
 library(lubridate)
 ```
 
@@ -19,8 +18,8 @@ substrate <- read.csv("Substrate.csv")
 # erddap_small <- read_csv("ERDDAP_coral_bleaching_small.csv")
 # erddap <- erddap_small[-1, ]
 
-# erddap_large <- read_csv("ERDDAP_coral_bleaching_large.csv")
-# erddap <- erddap_large[-1, ]
+erddap_large <- read.csv("ERDDAP_coral_bleaching_large.csv")
+erddap <- erddap_large[-1, ]
 ```
 
 # substrate data cleaning
@@ -92,13 +91,13 @@ data_cleaned <- joined_data |>
 ```
 
 ```{r}
-write_csv(data_cleaned, file = "data_cleaned_new.csv")
+write.csv(data_cleaned, file = "data_cleaned_new.csv")
 ```
 
 # check
 ```{r}
 substrate_filter |>
-  group_by(latitude, longitude) |>
+  group_by(year) |>
   summarise(n = n())
 ```
 
