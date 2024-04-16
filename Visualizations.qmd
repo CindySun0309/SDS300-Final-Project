@@ -1,0 +1,296 @@
+---
+title: "Data Visualization"
+author: "Cindy & Evelyn & Sophia"
+format: html
+editor: visual
+---
+```{r setup, include=FALSE}
+# Set default behavior for all code chunks, do not edit this chunk
+knitr::opts_chunk$set(
+  echo = TRUE, 
+  message = FALSE, 
+  warning = FALSE
+)
+```
+
+```{r, echo=FALSE}
+# load packages
+library(readr)
+library(tidyverse)
+library(ggplot2)
+library(sf)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(dplyr)
+library(tidyr)
+library(fuzzyjoin)
+library(lubridate)
+library(ggplot2)
+library(ggridges)
+library(patchwork)
+```
+
+```{r, echo=FALSE}
+# read data
+data <- read_csv("https://raw.githubusercontent.com/CindySun0309/SDS300-Final-Project/main/data_cleaned_new.csv") 
+
+# data cleaning
+clean_data <- data |>
+  filter(!is.na(CRW_BAA))
+
+clean_data$longitude <- as.numeric(clean_data$longitude)
+clean_data$latitude <- as.numeric(clean_data$latitude)
+clean_data$CRW_BAA <- as.character(clean_data$CRW_BAA)
+```
+
+```{r, echo=FALSE}
+# EDA of y's distribution
+eda_y_distribution <- ggplot(clean_data, aes(x =CRW_BAA, fill =CRW_BAA)) +
+  geom_bar() +
+  labs(title = "Distribution of outcome Variable",
+       x = "CRW_BAA",
+       y = "Count") +
+  theme_classic() +
+  theme(legend.position = "none")
+```
+
+```{r, echo=FALSE}
+# filter for map creation
+bleach_0 <- clean_data |>
+  filter(CRW_BAA == "0")
+bleach_1 <- clean_data |>
+  filter(CRW_BAA == "1")
+bleach_2 <- clean_data |>
+  filter(CRW_BAA == "2")
+bleach_3 <- clean_data |>
+  filter(CRW_BAA == "3")
+bleach_4 <- clean_data |>
+  filter(CRW_BAA == "4")
+
+# check the range of location 
+lat_range<- range(clean_data$latitude)
+long_range<- range(clean_data$longitude)
+
+# lat_range
+# long_range
+```
+
+We want to know where are corals located, and how far are they from shores? Here are maps:
+
+```{r, echo=FALSE}
+# Load world coastline data
+world_coastline <- ne_coastline(scale = "medium", returnclass = "sf")
+
+# Create a bounding box for the specified latitude and longitude ranges
+bbox <- st_bbox(c(xmin = -77.5, xmax = -61.5, ymin = 12.5, ymax = 21.5), crs = st_crs(world_coastline))
+
+# Filter coastline data within the bounding box
+coastal_areas <- st_intersection(world_coastline, st_as_sfc(bbox))
+
+# Plot the coastline
+#plot(coastal_areas, col = "blue", main = "Coastal Areas", axes = TRUE)
+```
+
+```{r, echo=FALSE}
+plot_bleach0 <- ggplot() +
+  geom_sf(data = coastal_areas, color = "blue") +
+  geom_point(data = bleach_0, aes(x = longitude, y = latitude), color = "green", size = 3)+
+  labs(title = "Map Indicates No Stress (BAA = 0) Locations", x = "Longitude", y = "Latitude") +
+  theme_minimal()
+plot_bleach0
+```
+
+```{r, echo=FALSE}
+plot_bleach1 <- ggplot() +
+  geom_sf(data = coastal_areas, color = "blue") +
+  geom_point(data = bleach_1, aes(x = longitude, y = latitude), color = "yellow2", size = 3)+
+  labs(title = "Map Indicates Bleaching Watch (BAA = 1) Locations", x = "Longitude", y = "Latitude") +
+  theme_minimal()
+plot_bleach1
+```
+
+```{r, echo=FALSE}
+plot_bleach2 <- ggplot() +
+  geom_sf(data = coastal_areas, color = "blue") +
+  geom_point(data = bleach_2, aes(x = longitude, y = latitude), color = "orange", size = 3)+
+  labs(title = "Map Indicates Bleaching Warning (BAA = 2) Locations", x = "Longitude", y = "Latitude") +
+  theme_minimal()
+plot_bleach2
+```
+
+```{r, echo=FALSE}
+plot_bleach3 <- ggplot() +
+  geom_sf(data = coastal_areas, color = "blue") +
+  geom_point(data = bleach_3, aes(x = longitude, y = latitude), color = "red", size = 3)+
+  labs(title = "Map Indicates Bleaching Alert Level 1 (BAA = 3) Locations", x = "Longitude", y = "Latitude") +
+  theme_minimal()
+plot_bleach3
+```
+
+```{r, echo=FALSE}
+plot_bleach4 <- ggplot() +
+  geom_sf(data = coastal_areas, color = "blue") +
+  geom_point(data = bleach_4, aes(x = longitude, y = latitude), color = "black", size = 3)+
+  labs(title = "Map Indicates Bleaching Alert Level 2 (BAA = 4) Locations", x = "Longitude", y = "Latitude") +
+  theme_minimal()
+plot_bleach4
+```
+
+
+```{r, include=FALSE}
+# some EDA
+clean_data |>
+  group_by(year, CRW_BAA) |>
+  summarise(n = n())
+
+
+clean_data |> 
+  group_by(date_substrate) |>
+  summarise(n = n())
+
+try <- clean_data |>
+  filter(date_substrate == date_erddap)
+
+try |>
+  group_by(year, CRW_BAA) |>
+  summarise(n = n())
+```
+
+We want to check how temperature affect coral from bleaching: 
+
+```{r, echo=FALSE}
+data_ds <- clean_data |>
+  filter(!is.na(CRW_BAA)) |>
+  group_by(CRW_BAA) |>
+  summarise(n = n(),
+            mean = mean(CRW_SST),
+            sd = sd(CRW_SST),
+            se = sd/sqrt(n))
+
+
+data_ds_year <- clean_data |>
+  filter(!is.na(CRW_BAA)) |>
+  group_by(year, CRW_BAA) |>
+  summarise(n = n(),
+            mean = mean(CRW_SST),
+            sd = sd(CRW_SST),
+            se = sd/sqrt(n))
+```
+
+```{r, echo=FALSE}
+ggplot(data = clean_data, aes(x = CRW_BAA, y = CRW_SST, color = CRW_BAA)) + 
+  geom_jitter(alpha = 0.4, size = 1, width = 0.2) +
+  geom_point(data = data_ds, aes(x = CRW_BAA, y = mean), color = "black", size = 2) +
+  geom_errorbar(data = data_ds, aes(x = CRW_BAA, y = mean, ymin = mean-se, ymax = mean+se), color = "black", width=0) +
+  labs(x = "Bleaching Alert Area",
+       y = "Sea Surface Temperature (Celsius)",
+       title = "Relationship Between Temperature and Coral Bleaching",
+       color = " ") +
+  theme_classic() +
+  scale_color_discrete(labels=c("0: No Stress", "1: Bleaching Watch", "2: Bleaching Warning", "3: Bleaching Alert Level 1", "4: Bleaching Alert Level 2")) +
+  guides(color = guide_legend(nrow = 2)) +
+  theme(axis.text = element_text(size = 11),
+        axis.title = element_text(size = 14),
+        strip.text = element_text(size = 14),
+        legend.title = element_text(size = 14),
+        legend.text = element_text(size = 11),
+        legend.position = "bottom")
+```
+
+We want to check how average temperature changed across years:
+```{r}
+average_sst <- clean_data |>
+  group_by(year) |>
+  summarize(mean = mean(CRW_SST))
+
+ggplot(average_sst, aes(x = year, y = mean)) +
+  geom_line() + 
+  geom_smooth(se = FALSE)+
+  #facet_wrap(as.factor(clean_data$year)) +
+  labs(title = "Sea Surfance Temperature Over Time",
+       x = "Date",
+       y = "Average Sea Surface Temperature (Celsius")
+```
+
+
+
+
+
+
+We want to check temperature by country in our dataset:
+```{r, echo=FALSE}
+#prelim scatter
+scatter <- ggplot(clean_data, aes(x = country, y = total)) +
+  geom_point()+
+  labs(title ="Scatterplot of Hard Coral Total Number by Country",
+       x = "Country", 
+       y = "Hard Coral Number")+
+  coord_flip()+
+  theme_classic()+ 
+  theme(plot.margin = margin(t = 2, r = 2, b = 2, l = 2, unit = "mm"))
+
+# scatter
+```
+
+```{r, echo=FALSE}
+#histo
+histo <- ggplot(clean_data, aes(x = total, y = country)) +
+  geom_density_ridges()+
+  theme_classic()+
+  labs(title = "Historgram of Hard Coral Number by Country",
+       x = "Hard Coral Number", 
+       y = "Country")+ 
+  theme(plot.margin = margin(t = 2, r = 2, b = 2, l = 2, unit = "mm"))
+
+# histo
+```
+
+```{r, echo=FALSE}
+combined_plot <- scatter / histo 
+combined_plot
+```
+
+
+We want to check coral number by country in our dataset:
+```{r, echo=FALSE}
+clean_data$CRW_SSTANOMALY<-scale(clean_data$CRW_SSTANOMALY, center=TRUE, scale=TRUE)[,1]
+
+#prelim scatter
+scatter2 <- ggplot(clean_data, aes(x = country, y = CRW_SSTANOMALY)) +
+  geom_point()+
+  labs(title ="Scatterplot of Sea Surface Temperature Anomaly (Celsius) by Country",
+       x = "Country", 
+       y = "Sea Surface Temperature Anomaly (Celsius)")+
+  coord_flip()+
+  theme_classic()+ 
+  theme(plot.margin = margin(t = 2, r = 2, b = 2, l = 2, unit = "mm"))
+
+# scatter2
+```
+
+```{r, echo=FALSE}
+#histo
+histo2 <- ggplot(clean_data, aes(x = CRW_SSTANOMALY, y = country)) +
+  geom_density_ridges()+
+  theme_classic()+
+  labs(title = "Historgram of Sea Surface Temperature Anomaly (Celsius) by Country",
+       x = "Sea Surface Temperature Anomaly (Celsius)", 
+       y = "Country")+ 
+  theme(plot.margin = margin(t = 5, r = 5, b = 5, l = 5, unit = "mm")) 
+
+# histo2
+```
+
+```{r, echo=FALSE}
+
+combined_plot2 <- scatter2 / histo2
+combined_plot2
+
+```
+
+
+
+
+
+
+
