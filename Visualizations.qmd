@@ -198,19 +198,42 @@ ggplot(data = clean_data, aes(x = CRW_BAA, y = CRW_SST, color = CRW_BAA)) +
 ```
 
 We want to check how average temperature changed across years:
-```{r}
+```{r, echo=FALSE}
 average_sst <- clean_data |>
   group_by(year) |>
   summarize(mean = mean(CRW_SST))
+```
 
+```{r, echo=FALSE}
 ggplot(average_sst, aes(x = year, y = mean)) +
   geom_line() + 
-  geom_smooth(se = FALSE)+
-  #facet_wrap(as.factor(clean_data$year)) +
+  geom_smooth(se = F) +
   labs(title = "Sea Surfance Temperature Over Time",
        x = "Date",
        y = "Average Sea Surface Temperature (Celsius")
 ```
+
+```{r, echo=FALSE}
+ggplot(clean_data, aes(x = year, y = CRW_SST)) +
+  geom_line() + 
+  facet_wrap(as.factor(clean_data$country)) +
+  geom_smooth(se = F) +
+  labs(title = "Sea Surfance Temperature Over Time by Countries",
+       x = "Date",
+       y = "Average Sea Surface Temperature (Celsius")
+```
+
+```{r, echo=FALSE}
+ggplot(clean_data, aes(x = month, y = CRW_SST)) +
+  geom_line() + 
+  facet_wrap(as.factor(clean_data$year)) +
+  labs(title = "Sea Surfance Temperature Over Time by Years",
+       x = "Date",
+       y = "Average Sea Surface Temperature (Celsius") +
+  scale_x_continuous(breaks = 1:12)
+```
+Overall, the sea surface temperature decreased at first and then increased in recent years, but there are missing data.
+
 
 
 
