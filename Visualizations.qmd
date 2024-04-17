@@ -1,9 +1,12 @@
 ---
 title: "Data Visualization"
 author: "Cindy & Evelyn & Sophia"
-format: html
+format: 
+  html:
+    embed-resources: true
 editor: visual
 ---
+
 ```{r setup, include=FALSE}
 # Set default behavior for all code chunks, do not edit this chunk
 knitr::opts_chunk$set(
@@ -136,7 +139,6 @@ plot_bleach4 <- ggplot() +
 plot_bleach4
 ```
 
-
 ```{r, include=FALSE}
 # some EDA
 clean_data |>
@@ -156,7 +158,7 @@ try |>
   summarise(n = n())
 ```
 
-We want to check how temperature affect coral from bleaching: 
+We want to check how temperature affect coral from bleaching:
 
 ```{r, echo=FALSE}
 data_ds <- clean_data |>
@@ -198,6 +200,7 @@ ggplot(data = clean_data, aes(x = CRW_BAA, y = CRW_SST, color = CRW_BAA)) +
 ```
 
 We want to check how average temperature changed across years:
+
 ```{r, echo=FALSE}
 average_sst <- clean_data |>
   group_by(year) |>
@@ -232,15 +235,11 @@ ggplot(clean_data, aes(x = month, y = CRW_SST)) +
        y = "Average Sea Surface Temperature (Celsius") +
   scale_x_continuous(breaks = 1:12)
 ```
+
 Overall, the sea surface temperature decreased at first and then increased in recent years, but there are missing data.
 
-
-
-
-
-
-
 We want to check temperature by country in our dataset:
+
 ```{r, echo=FALSE}
 #prelim scatter
 scatter <- ggplot(clean_data, aes(x = country, y = total)) +
@@ -273,8 +272,8 @@ combined_plot <- scatter / histo
 combined_plot
 ```
 
-
 We want to check coral number by country in our dataset:
+
 ```{r, echo=FALSE}
 clean_data$CRW_SSTANOMALY<-scale(clean_data$CRW_SSTANOMALY, center=TRUE, scale=TRUE)[,1]
 
@@ -310,10 +309,3 @@ combined_plot2 <- scatter2 / histo2
 combined_plot2
 
 ```
-
-
-
-
-
-
-
